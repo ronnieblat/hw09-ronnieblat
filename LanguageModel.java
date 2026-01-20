@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -32,20 +34,82 @@ public class LanguageModel {
     }
 
     /** Builds a language model from the text in the given file (the corpus). */
-	public void train(String fileName) {
-		// Your code goes here
-	}
+    public void train(String fileName) {
+    String window = "";
+    char c;
+
+    In in = new In(fileName);
+
+    for (int i = 0; i < windowLength; ) {
+        if (in.isEmpty()) return;
+        char ch = in.readChar();
+        if (ch == '\r') continue;    
+        window = window + ch;
+        i++;
+    }
+
+    while (!in.isEmpty()) {
+        c = in.readChar();
+        if (c == '\r') continue;  
+
+        List probs = CharDataMap.get(window);
+        if (probs == null) {
+            probs = new List();
+            CharDataMap.put(window, probs);
+        }
+
+        probs.update(c);
+        window = window.substring(1) + c;
+    }
+
+    java.util.Iterator<List> it = CharDataMap.values().iterator();
+    while (it.hasNext()) {
+        calculateProbabilities(it.next());
+    }
+}
+
 
     // Computes and sets the probabilities (p and cp fields) of all the
 	// characters in the given list. */
-	void calculateProbabilities(List probs) {				
-		// Your code goes here
-	}
+    void calculateProbabilities(List probs) {
+    int sum = 0;
+    for (int i = 0; i < probs.getSize(); i++) {
+        sum += probs.get(i).count;
+    }
+
+    if (sum == 0) {
+        for (int i = 0; i < probs.getSize(); i++) {
+            probs.get(i).p = 0.0;
+            probs.get(i).cp = 0.0;
+        }
+        return;
+    }
+
+    double cumulative = 0.0;
+    for (int i = 0; i < probs.getSize(); i++) {
+        CharData pr = probs.get(i);
+        pr.p = (double) pr.count / sum;
+        cumulative += pr.p;
+        pr.cp = cumulative;
+    }
+
+    if (probs.getSize() > 0) {
+        probs.get(probs.getSize() - 1).cp = 1.0;
+    }
+}
+
 
     // Returns a random character from the given probabilities list.
 	char getRandomChar(List probs) {
-		// Your code goes here
-		return ' ';
+        double r = randomGenerator.nextDouble();
+        if (probs.getSize()==0) return '\0';
+        for (int i=0;i<probs.getSize();i++){
+            CharData pr=probs.get(i);
+            if (pr.cp > r)
+                 return pr.chr;
+
+        }
+        return probs.get(probs.getSize()-1).chr;
 	}
 
     /**
@@ -56,9 +120,29 @@ public class LanguageModel {
 	 * @return the generated text
 	 */
 	public String generate(String initialText, int textLength) {
-		// Your code goes here
-        return "";
-	}
+    if (initialText == null || initialText.length() < windowLength) {
+        return initialText;
+    }
+
+    StringBuilder generated = new StringBuilder(initialText);
+
+    while (generated.length() < textLength) {
+        String window = generated.substring(generated.length() - windowLength);
+        List probs = CharDataMap.get(window);
+
+        if (probs == null || probs.getSize() == 0) {
+            break;
+        }
+
+        char nextChar = getRandomChar(probs);
+        generated.append(nextChar);
+    }
+
+    return generated.toString();
+}
+
+
+    
 
     /** Returns a string representing the map of this language model. */
 	public String toString() {
@@ -71,6 +155,27 @@ public class LanguageModel {
 	}
 
     public static void main(String[] args) {
-		// Your code goes here
+int windowLength = Integer.parseInt(args[0]);
+String initialText = args[1];
+int generatedTextLength = Integer.parseInt(args[2]);
+Boolean randomGeneration = args[3].equals("random");
+String fileName = args[4];
+// Create the LanguageModel object
+if (args.length != 5) {
+    System.out.println("Usage: java LanguageModel windowLength initialText textLength fixed/random fileName");
+    System.out.println("args.length=" + args.length);
+    return;
+}
+
+LanguageModel lm;
+
+if (randomGeneration)
+lm = new LanguageModel(windowLength);
+else
+lm = new LanguageModel(windowLength, 20);
+// Trains the model, creating the map.
+lm.train(fileName);
+// Generates text, and prints it.
+System.out.println(lm.generate(initialText, generatedTextLength));
     }
 }
