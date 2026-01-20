@@ -85,12 +85,12 @@ public class LanguageModel {
         return;
     }
 
-    double cumulative = 0.0;
+    double c = 0.0;
     for (int i = 0; i < probs.getSize(); i++) {
         CharData pr = probs.get(i);
         pr.p = (double) pr.count / sum;
-        cumulative += pr.p;
-        pr.cp = cumulative;
+        c += pr.p;
+        pr.cp = c;
     }
 
     if (probs.getSize() > 0) {
@@ -155,25 +155,22 @@ public class LanguageModel {
 	}
 
     public static void main(String[] args) {
-int windowLength = Integer.parseInt(args[0]);
-String initialText = args[1];
-int generatedTextLength = Integer.parseInt(args[2]);
-Boolean randomGeneration = args[3].equals("random");
-String fileName = args[4];
-// Create the LanguageModel object
-if (args.length != 5) {
-    System.out.println("Usage: java LanguageModel windowLength initialText textLength fixed/random fileName");
-    System.out.println("args.length=" + args.length);
-    return;
-}
-
-LanguageModel lm;
-
-if (randomGeneration)
-lm = new LanguageModel(windowLength);
-else
-lm = new LanguageModel(windowLength, 20);
-// Trains the model, creating the map.
+        int windowLength = Integer.parseInt(args[0]);
+        String initialText = args[1];
+        int generatedTextLength = Integer.parseInt(args[2]);
+        Boolean randomGeneration = args[3].equals("random");
+        String fileName = args[4];
+        if (args.length != 5) {
+            System.out.println("Usage: java LanguageModel windowLength initialText textLength fixed/random fileName");
+            System.out.println("args.length=" + args.length);
+            return;
+        }
+        LanguageModel lm;
+        if (randomGeneration)
+            lm = new LanguageModel(windowLength);
+        else
+            lm = new LanguageModel(windowLength, 20);
+        // Trains the model, creating the map.
 lm.train(fileName);
 // Generates text, and prints it.
 System.out.println(lm.generate(initialText, generatedTextLength));
