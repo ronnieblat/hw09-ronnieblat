@@ -32,7 +32,7 @@ public class List {
     /** GIVE Adds a CharData object with the given character to the beginning of this list. */
 public void addFirst(char chr) {
     CharData cd = new CharData(chr);
-    cd.count = 1; 
+    cd.count = 1;
     cd.p = 0.0;
     cd.cp = 0.0;
 
@@ -87,7 +87,7 @@ public void update(char chr) {
         }
         current = current.next;
     }
-    addFirst(chr); 
+    addFirst(chr);
 }
 
 
